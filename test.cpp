@@ -30,7 +30,7 @@ private:
     int a_;
 };
 
-void fn_mut(depman::borrow<FooI> b)
+void fn_mut(depman::ref<FooI> b)
 {
     b->a(7);
     std::cout << b->a();
@@ -39,12 +39,12 @@ void fn_mut(depman::borrow<FooI> b)
 //    borrow<const Foo> c2 = b;
 }
 
-void fn_immut(depman::borrow<const FooI> b)
+void fn_immut(depman::ref<const FooI> b)
 {
     std::cout << b->a();
     std::cout << b.value().a();
 
-    depman::borrow<const FooI> c = b;
+    depman::ref<const FooI> c = b;
 
 
 // immutable cannot be converted to mutable
@@ -53,14 +53,14 @@ void fn_immut(depman::borrow<const FooI> b)
 
 void simple_test()
 {
-    depman::var<Foo> f2(depman::make_var<Foo>(4));
+    depman::ref_cell<Foo> f2(depman::make_ref_cell<Foo>(4));
     // var is copyable - if the underlying type supports it
-    depman::var<Foo> f3 = f2;
+    depman::ref_cell<Foo> f3 = f2;
     // var is movable - if the underlying type supports it
-    depman::var<Foo> f4 = std::move(f2);
+    depman::ref_cell<Foo> f4 = std::move(f2);
 
     {
-        depman::borrow<const FooI> f4b = f4;
+        depman::ref<const FooI> f4b = f4;
         std::cout << f4b->a();
 
     /* active aliasing prevents mutation
@@ -71,7 +71,7 @@ void simple_test()
     }
 
     // Temporal aliasing borrow
-    std::cout << f4.get()->a();
+    std::cout << f4.borrow()->a();
 
     // Implicit temporal borrows
     fn_mut(f4);
@@ -80,7 +80,7 @@ void simple_test()
 
 void arc_test()
 {
-    auto f2 = std::make_shared<depman::var<Foo>>(depman::make_var<Foo>(4));
+    auto f2 = std::make_shared<depman::ref_cell<Foo>>(depman::make_ref_cell<Foo>(4));
     auto f3 = f2;
 
     fn_mut(*f2);

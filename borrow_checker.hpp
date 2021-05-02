@@ -12,20 +12,20 @@ namespace depman
 {
 
 template<typename T>
-class borrow
+class ref
 {
 public:
-    borrow(std::remove_const_t<T>* owned, borrow_ref_policy* ref_policy)
+    ref(std::remove_const_t<T>* owned, borrow_ref_policy* ref_policy)
         : ref_(owned)
         , ref_policy_(ref_policy)
     {
         ref_policy_->register_mutation();
     }
 
-    borrow(const borrow& other);
-    borrow& operator=(const borrow& other) = delete;
+    ref(const ref& other);
+    ref& operator=(const ref& other) = delete;
 
-    borrow(borrow&& other)
+    ref(ref&& other)
         : ref_(other.ref_)
         , ref_policy_(other.ref_policy_)
     {
@@ -33,9 +33,9 @@ public:
         other.ref_policy_ = nullptr;
     }
 
-    borrow& operator=(borrow&& other) = delete;
+    ref& operator=(ref&& other) = delete;
 
-    ~borrow()
+    ~ref()
     {
         ref_policy_->unregister_mutation();
     }
@@ -64,26 +64,26 @@ private:
 };
 
 template<typename T>
-class borrow<const T>
+class ref<const T>
 {
 public:
-    borrow(std::add_const_t<T>* owned, borrow_ref_policy* ref_policy)
+    ref(std::add_const_t<T>* owned, borrow_ref_policy* ref_policy)
         : ref_(owned)
         , ref_policy_(ref_policy)
     {
         ref_policy_->register_aliasing();
     }
 
-    borrow(const borrow& other)
+    ref(const ref& other)
         : ref_(other.ref_)
         , ref_policy_(other.ref_policy_)
     {
         ref_policy_->register_aliasing();
     }
 
-    borrow& operator=(const borrow& other) = delete;
+    ref& operator=(const ref& other) = delete;
 
-    borrow(borrow&& other)
+    ref(ref&& other)
         : ref_(other.ref_)
         , ref_policy_(other.ref_policy_)
     {
@@ -91,9 +91,9 @@ public:
         other.ref_policy_ = nullptr;
     }
 
-    borrow& operator=(borrow&& other) = delete;
+    ref& operator=(ref&& other) = delete;
 
-    ~borrow()
+    ~ref()
     {
         ref_policy_->unregister_aliasing();
     }
@@ -123,10 +123,10 @@ private:
 
 
 template<typename T, typename RefPolicy = assert_borrow_ref_policy>
-class var
+class ref_cell
 {
 public:
-    var(const var &other)
+    ref_cell(const ref_cell &other)
         : ref_policy_(other.ref_policy_)
     {
         const bool valid = ref_policy_.has_value();
@@ -137,7 +137,7 @@ public:
         }
     }
 
-    var(var&& other)
+    ref_cell(ref_cell&& other)
         : ref_policy_(std::move(other.ref_policy_))
     {
         auto& other_owned = reinterpret_cast<T&>(other.owned_buffer_);
@@ -146,37 +146,37 @@ public:
         other.ref_policy_.reset();
     }
 
-    borrow<const T> get()
+    ref<const T> borrow()
     {
-        return this->operator borrow<const T>();
+        return this->operator ref<const T>();
     }
 
-    borrow<T> get_mut()
+    ref<T> borrow_mut()
     {
-        return this->operator borrow<T>();
+        return this->operator ref<T>();
     }
 
     template<typename D, typename std::enable_if_t<std::is_const_v<D>>* = nullptr>
-    operator borrow<D>()
+    operator ref<D>()
     {
         assert(ref_policy_);
         auto borrowed = reinterpret_cast<D*>(&owned_buffer_);
         borrow_ref_policy* ref_manager = &ref_policy_.value();
-        return borrow<D>(borrowed, ref_manager);
+        return ref<D>(borrowed, ref_manager);
     }
 
     template<typename D, typename std::enable_if_t<!std::is_const_v<D>>* = nullptr>
-    operator borrow<D>()
+    operator ref<D>()
     {
         assert(ref_policy_);
         auto borrowed = reinterpret_cast<D*>(&owned_buffer_);
         borrow_ref_policy* ref_manager = &ref_policy_.value();
-        return borrow<D>(borrowed, ref_manager);
+        return ref<D>(borrowed, ref_manager);
     }
 
 private:
     using ref_policy_type = RefPolicy;
-    var(RefPolicy&& ref_policy)
+    ref_cell(RefPolicy&& ref_policy)
         : ref_policy_(std::move(ref_policy))
     {}
 
@@ -193,16 +193,16 @@ private:
     friend class borrow;
 
     template<typename T, typename... Args>
-    friend var<T> make_var(Args&&... args);
+    friend ref_cell<T> make_ref_cell(Args&&... args);
 };
 
 template<typename T, typename... Args>
-var<T> make_var(Args&&... args)
+ref_cell<T> make_ref_cell(Args&&... args)
 {
-    auto ref_policy = var<T>::ref_policy_type();
-    var<T> new_borrowable(std::move(ref_policy));
-    new_borrowable.create_owned(std::forward<Args>(args)...);
-    return new_borrowable;
+    auto ref_policy = ref_cell<T>::ref_policy_type();
+    ref_cell<T> new_ref_cell(std::move(ref_policy));
+    new_ref_cell.create_owned(std::forward<Args>(args)...);
+    return new_ref_cell;
 }
 
 };
