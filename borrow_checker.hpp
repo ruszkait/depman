@@ -40,18 +40,24 @@ public:
         ref_policy_->unregister_mutation();
     }
 
-    std::remove_const_t<T>* operator*()
-    {
-        assert(ref_ != nullptr);
-        return ref_;
-    }
-
     std::remove_const_t<T>* operator->()
     {
         assert(ref_ != nullptr);
         return ref_;
     }
 
+    // Dangerous to get the pointer/reference out of the ref,
+    // as the ref loses control over those c++ *-s and &-es
+    // Shall be used only as temporal variables
+    std::remove_const_t<T>* operator*()
+    {
+        assert(ref_ != nullptr);
+        return ref_;
+    }
+
+    // Dangerous to get the pointer/reference out of the ref,
+    // as the ref loses control over those c++ *-s and &-es
+    // Shall be used only as temporal variables
     std::remove_const_t<T>& value()
     {
         assert(ref_ != nullptr);
@@ -98,18 +104,24 @@ public:
         ref_policy_->unregister_aliasing();
     }
 
-    std::add_const_t<T>* operator*()
-    {
-        assert(ref_ != nullptr);
-        return ref_;
-    }
-
     std::add_const_t<T>* operator->()
     {
         assert(ref_ != nullptr);
         return ref_;
     }
 
+    // Dangerous to get the pointer/reference out of the ref,
+    // as the ref loses control over those c++ *-s and &-es
+    // Shall be used only as temporal variables
+    std::add_const_t<T>* operator*()
+    {
+        assert(ref_ != nullptr);
+        return ref_;
+    }
+
+    // Dangerous to get the pointer/reference out of the ref,
+    // as the ref loses control over those c++ *-s and &-es
+    // Shall be used only as temporal variables
     std::add_const_t<T>& value()
     {
         assert(ref_ != nullptr);

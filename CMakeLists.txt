@@ -10,6 +10,6 @@ target_sources(${PROJECT_NAME}
 	PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/borrow_checker.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/borrow_ref_policy.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/root_var.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/root_shared_ptr.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test.cpp
 )
